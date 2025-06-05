@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ট্যাপ টু আর্ন প্রো</title>
+    <style>
+        :root {
+            --primary-color: #0a0f1f;
+            --secondary-color: #1a2340;
+            --accent-color: #00ffff;
+            --accent-secondary-color: #ff00ff; /* ম্যাজেন্টা অ্যাকসেন্ট */
+            --text-color: #e0e0e0;
+            --success-color: #4caf50;
+            --warning-color: #ffc107; /* হলুদ */
+            --danger-color: #f44336;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* আধুনিক ফন্ট */
+            --border-radius: 12px; /* বড় ব্যাসার্ধ */
+            --transition-speed: 0.3s;
+            --shadow-light: rgba(0, 255, 255, 0.2);
+            --shadow-dark: rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="light"] {
+            --primary-color: #e8eaf6;
+            --secondary-color: #ffffff;
+            --accent-color: #3f51b5; /* ইন্ডিগো */
+            --accent-secondary-color: #e91e63; /* পিঙ্ক */
+            --text-color: #212121;
+            --shadow-light: rgba(63, 81, 181, 0.2);
+            --shadow-dark: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .screen {
+            display: none;
+            flex-grow: 1;
+            padding: 15px; /* কিছুটা কমানো হলো */
+            overflow-y: auto;
+            background-color: var(--secondary-color);
+            animation: fadeIn var(--transition-speed) ease-out;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--primary-color);
+            padding: 8px 0;
+            border-top: 1px solid var(--accent-color);
+            box-shadow: 0 -3px 15px var(--shadow-light);
+            flex-shrink: 0; /* নেভিগেশন বার যেন ছোট না হয় */
+        }
+        .nav-button {
+            background: none; border: none; color: var(--text-color); font-size: 11px;
+            padding: 6px 4px; cursor: pointer; transition: all var(--transition-speed);
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            border-radius: var(--border-radius); flex: 1; /* সমানভাবে জায়গা নেবে */
+        }
+        .nav-button .icon { font-size: 18px; }
+        .nav-button.active, .nav-button:hover {
+            color: var(--accent-color);
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .button {
+            background-image: linear-gradient(45deg, var(--accent-color), var(--accent-secondary-color));
+            color: var(--primary-color); border: none; padding: 12px 22px;
+            border-radius: var(--border-radius); font-size: 16px; font-weight: bold;
+            cursor: pointer; transition: all var(--transition-speed);
+            box-shadow: 0 4px 10px var(--shadow-light); text-transform: uppercase; letter-spacing: 1px;
+        }
+        .button:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 6px 15px var(--shadow-light);
+        }
+        .button:active { transform: translateY(0px) scale(0.97); }
+        .button:disabled {
+            background-image: none; background-color: #555; color: #888;
+            cursor: not-allowed; box-shadow: none;
+        }
+        .button-secondary {
+            background-image: none; background-color: var(--secondary-color);
+            color: var(--accent-color); border: 1px solid var(--accent-color);
+        }
+        .button-secondary:hover { background-color: var(--primary-color); }
+
+        h1, h2, h3 {
+            font-weight: 600; /* সেমি-বোল্ড */
+            color: var(--accent-color); margin-bottom: 18px; text-align: center;
+        }
+        h2 { font-size: 1.8em; }
+        h3 { font-size: 1.2em; color: var(--text-color); text-align: left; }
+
+        p { line-height: 1.7; margin-bottom: 12px; font-size: 0.95em; }
+
+        .card {
+            background-color: var(--primary-color); padding: 18px;
+            border-radius: var(--border-radius); margin-bottom: 18px;
+            box-shadow: 0 5px 15px var(--shadow-dark); width: 100%; max-width: 450px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .stat-display {
+            font-size: 1.3em; margin: 12px 0; text-align: center;
+            padding: 10px; background-color: var(--primary-color);
+            border-radius: var(--border-radius);
+            box-shadow: inset 0 0 10px var(--shadow-dark);
+        }
+        .stat-display .value { color: var(--warning-color); font-weight: bold; }
+
+        /* --- ট্যাপ জোন স্টাইল --- */
+        #tapZoneScreen { justify-content: space-between; padding-bottom: 0; }
+        .tap-area-container {
+            flex-grow: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; width: 100%;
+            position: relative; /* for advanced animations */
+        }
+        .tap-button-wrapper { position: relative; }
+        .tap-button {
+            width: 200px; height: 200px; border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-secondary-color) 0%, var(--accent-color) 100%);
+            color: var(--primary-color); font-size: 28px; font-weight: bold;
+            display: flex; justify-content: center; align-items: center; cursor: pointer;
+            user-select: none; text-shadow: 0 0 5px rgba(0,0,0,0.3);
+            box-shadow: 0 0 25px var(--accent-color), 0 0 35px var(--accent-color) inset, 0 8px 15px var(--shadow-dark);
+            transition: transform 0.08s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.08s;
+            border: 6px solid var(--secondary-color);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+        .tap-button:active {
+            transform: scale(0.93) !important; /* Override pulse */
+            box-shadow: 0 0 10px var(--accent-color), 0 0 15px var(--accent-color) inset, 0 4px 8px var(--shadow-dark);
+            animation: none; /* Stop pulse on active */
+        }
+        #tapButtonFeedbackContainer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+        }
+        .floating-reward {
+            position: absolute; font-size: 20px; font-weight: bold;
+            color: var(--warning-color); opacity: 1;
+            animation: floatUpBig 1.2s ease-out forwards;
+            pointer-events: none; text-shadow: 1px 1px 2px var(--primary-color);
+        }
+        @keyframes floatUpBig {
+            to { transform: translateY(-80px) scale(1.3); opacity: 0; }
+        }
+        .critical-flash {
+            position: absolute; top: 50%; left: 50%; width: 300px; height: 300px;
+            background-color: rgba(255, 255, 0, 0.5); border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            animation: critFlash 0.5s ease-out; pointer-events: none;
+        }
+        @keyframes critFlash {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        .tap-stats { text-align: center; margin-top: 15px; width: 100%; }
+        .tap-stats p { margin: 6px 0; font-size: 0.9em; }
+        .combo-meter {
+            width: 90%; max-width: 350px; height: 22px;
+            background-color: var(--primary-color); border: 2px solid var(--accent-color);
+            border-radius: var(--border-radius); margin: 10px auto; overflow: hidden;
+            box-shadow: inset 0 0 8px var(--shadow-dark);
+        }
+        .combo-progress {
+            height: 100%; width: 0%;
+            background-image: linear-gradient(45deg, var(--success-color), #8bc34a);
+            transition: width 0.15s linear;
+        }
+        #energyBarContainer { width: 70%; max-width: 250px; height: 15px; background-color: #333; border-radius: var(--border-radius); margin: 10px auto; overflow:hidden; border: 1px solid var(--accent-color);}
+        #energyBar { height: 100%; width: 100%; background-color: var(--warning-color); transition: width 0.5s linear;}
+
+
+        /* --- দোকান ঘর স্টাইল --- */
+        #shopItemsContainer .card { border-left-color: var(--accent-secondary-color); }
+
+        /* --- প্রোফাইল জোন স্টাইল --- */
+        #profileZoneScreen .card { border-left-color: var(--success-color); }
+        .profile-avatar {
+            width: 120px; height: 120px; border-radius: 50%;
+            background-image: linear-gradient(135deg, var(--accent-color), var(--accent-secondary-color));
+            color: var(--primary-color); display: flex; justify-content: center; align-items: center;
+            font-size: 50px; font-weight: bold; margin-bottom: 15px;
+            box-shadow: 0 0 20px var(--shadow-light);
+        }
+        .username-input {
+            background-color: var(--secondary-color); color: var(--text-color);
+            border: 1px solid var(--accent-color); padding: 10px; width: calc(100% - 100px);
+            border-radius: var(--border-radius); margin-right: 10px;
+        }
+        #badgesContainer span { margin: 0 3px; filter: drop-shadow(0 0 2px var(--accent-color)); }
+        .stat-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95em; }
+        .stat-item .label { color: #bbb; }
+        .stat-item .value { color: var(--text-color); font-weight: 600; }
+
+
+        /* --- গেম মিশন জোন স্টাইল --- */
+        .task-item { border-left-color: var(--warning-color); }
+        .task-item.completed { border-left-color: var(--success-color); opacity: 0.8; background-color: #2c3e50cc; }
+        .task-item h3 { font-size: 1.1em; }
+        #taskHistoryList li { padding: 5px 0; border-bottom: 1px dashed var(--secondary-color); font-size: 0.9em;}
+        #taskHistoryList li:last-child { border-bottom: none; }
+
+        /* --- বিশ্ব র‍্যাংকিং জোন স্টাইল --- */
+        .rank-item { border: none; border-bottom: 1px solid var(--secondary-color); }
+        .rank-item.user-rank {
+            background-image: linear-gradient(to right, var(--accent-color) 0%, var(--primary-color) 70%) !important;
+            color: var(--primary-color) !important;
+            box-shadow: 0 0 15px var(--accent-color);
+            border-radius: var(--border-radius);
+        }
+        .rank-item.user-rank .rank-position,
+        .rank-item.user-rank .rank-name,
+        .rank-item.user-rank .rank-score { color: var(--primary-color); text-shadow: 0 0 3px white;}
+        .rank-position { font-size: 1.2em; }
+
+
+        /* --- ইভেন্ট জোন স্টাইল --- */
+        #eventZoneScreen .card { border-left-color: var(--accent-secondary-color); }
+        .event-item { text-align: center; }
+        .event-item .button { margin-top: 10px; }
+        .event-timer { font-size: 0.9em; color: var(--warning-color); }
+
+        /* লোডার */
+        .loader { /* ... আগের মতোই ... */ }
+        @keyframes spin { /* ... আগের মতোই ... */ }
+
+        /* অ্যালার্ট */
+        .alert-popup { /* ... আগের মতোই, শুধু font-weight: bold; যোগ করতে পারেন ... */
+             font-weight: bold;
+        }
+
+        /* কনফেটি */
+        .confetti-container { /* ... আগের মতোই ... */ }
+        .confetti { /* ... আগের মতোই ... */ }
+        @keyframes fall { /* ... আগের মতোই ... */ }
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- স্ক্রিনগুলো -->
+        <div id="tapZoneScreen" class="screen">
+            <div class="stat-display">💰 মোট কয়েন: <span id="totalCoinsTap" class="value">0</span></div>
+            <div id="timeBonusBarContainer" class="time-bonus-bar" style="display:none;">
+                <div id="timeBonusProgress" class="time-bonus-progress"></div>
+            </div>
+            <p id="timeBonusMessage" style="display:none; color: var(--warning-color); font-weight:bold; text-align:center;"></p>
+            
+            <div class="tap-area-container">
+                <div id="tapButtonWrapper" class="tap-button-wrapper">
+                    <div id="tapButton" class="tap-button">ট্যাপ!</div>
+                    <div id="tapButtonFeedbackContainer"></div>
+                </div>
+            </div>
+
+            <div class="tap-stats">
+                <div id="energyBarContainer" style="display: none;">
+                    <div id="energyBar"></div>
+                </div>
+                <p id="energyStat" style="display: none;">⚡ এনার্জি: <span id="energyValue">100</span>/<span id="maxEnergyValue">100</span></p>
+                <p>💥 ট্যাপ পাওয়ার: <span id="tapPowerStat">1</span></p>
+                <p>🔗 কম্বো: x<span id="comboMultiplierStat">1</span> (সর্বোচ্চ: <span id="maxComboStat">0</span>)</p>
+                <div class="combo-meter"><div id="comboProgressBar" class="combo-progress"></div></div>
+                <p id="comboBreakAlert" style="color: var(--danger-color); display: none; font-weight:bold;">কম্বো ব্রেক!</p>
+                <p>🎯 ক্রিটিক্যাল চান্স: <span id="criticalChanceStat">5</span>% (x<span id="criticalMultiplierStat">3</span>)</p>
+                <button id="activatePowerModeButton" class="button button-secondary" style="font-size:12px; padding: 8px 12px; margin-top:10px; display:none;">পাওয়ার মোড ( তৈয়ার)</button>
+            </div>
+        </div>
+
+        <div id="shopZoneScreen" class="screen">
+            <h2>🏪 দোকান ঘর</h2>
+            <div class="stat-display">💰 আপনার কয়েন: <span id="totalCoinsShop" class="value">0</span></div>
+            <button id="refreshShopButton" class="button button-secondary" style="margin-bottom: 15px;">শপ রিফ্রেশ (স্পেশাল অফার?)</button>
+            <div id="shopItemsContainer" style="width: 100%; max-width: 450px;"></div>
+        </div>
+
+        <div id="profileZoneScreen" class="screen">
+            <h2>👤 প্রোফাইল জোন</h2>
+            <div class="profile-info card">
+                <div id="profileAvatar" class="profile-avatar">AV</div>
+                <h3 id="usernameDisplay" style="text-align:center; font-size:1.5em; margin-top:5px; margin-bottom:10px;">অতিথি</h3>
+                <div class="stat-item"><span class="label">🏆 লেভেল:</span> <span id="profileLevel" class="value">1</span> (<span id="profileXP">0</span>/<span id="nextLevelXP">100</span> XP)</div>
+                <div class="stat-item"><span class="label">💰 মোট কয়েন:</span> <span id="profileTotalCoins" class="value">0</span></div>
+                <div class="stat-item"><span class="label">🚀 সর্বোচ্চ রেকর্ড (কয়েন):</span> <span id="profileHighScore" class="value">0</span></div>
+                <div class="stat-item"><span class="label">🖐 আজকের ট্যাপ:</span> <span id="profileTodayTaps" class="value">0</span></div>
+                <div class="stat-item"><span class="label"> histórico মোট ট্যাপ:</span> <span id="profileTotalTaps" class="value">0</span></div>
+                <div class="stat-item"><span class="label">🔗 সর্বোচ্চ কম্বো:</span> <span id="profileMaxCombo" class="value">0</span></div>
+                <div id="badgesContainer" style="text-align:center; margin-top:10px;"></div>
+            </div>
+            <div class="card">
+                <h3>সেটিংস ও অন্যান্য</h3>
+                <input type="text" id="usernameInput" class="username-input" placeholder="নতুন নাম (সর্বোচ্চ ১৫ অক্ষর)">
+                <button id="saveUsernameButton" class="button" style="padding:10px 15px; font-size:14px; width:80px;">সেভ</button>
+                <div style="margin-top:15px;">
+                     <button id="themeToggleButton" class="button button-secondary theme-toggle" style="margin-right:10px;">থিম</button>
+                     <button id="soundToggleButton" class="button button-secondary">সাউন্ড: অন</button>
+                </div>
+                <button id="resetProgressButton" class="button" style="background-image:none; background-color: var(--danger-color); margin-top:15px; width:100%;">সম্পূর্ণ অগ্রগতি রিসেট করুন</button>
+            </div>
+        </div>
+
+        <div id="taskZoneScreen" class="screen">
+            <h2>🎮 গেম মিশন</h2>
+            <div id="tasksContainer" style="width: 100%; max-width: 450px;"></div>
+            <div class="card" style="margin-top: 20px;">
+                <h3>📜 মিশনের ইতিহাস</h3>
+                <ul id="taskHistoryList"></ul>
+            </div>
+        </div>
+
+        <div id="rankZoneScreen" class="screen">
+            <h2>🌍 বিশ্ব র‍্যাংকিং (লোকাল)</h2>
+            <p>এটি একটি লোকাল লিডারবোর্ড। আপনার ডিভাইসের সেরা স্কোরগুলো এখানে দেখানো হবে।</p>
+            <div id="rankingFilterContainer" style="margin-bottom:15px; text-align:center;">
+                <label for="rankingCategory">ক্যাটাগরি:</label>
+                <select id="rankingCategory" class="username-input" style="width:auto; padding:8px;">
+                    <option value="score">সর্বোচ্চ স্কোর</option>
+                    <option value="level">লেভেল</option>
+                    <option value="totalTaps">মোট ট্যাপ</option>
+                </select>
+            </div>
+            <div id="rankingListContainer" class="ranking-list" style="width: 100%; max-width: 450px;"></div>
+            <button id="updateRankButton" class="button button-secondary" style="margin-top:20px;">র‍্যাংকিং আপডেট</button>
+        </div>
+        
+        <div id="eventZoneScreen" class="screen">
+            <h2>🎉 বিশেষ ইভেন্ট</h2>
+            <p>বিশেষ ইভেন্টে অংশগ্রহণ করে অতিরিক্ত পুরস্কার জিতুন!</p>
+            <div id="eventItemsContainer" style="width: 100%; max-width: 450px;">
+                <!-- ইভেন্ট আইটেম JS দিয়ে তৈরি হবে -->
+            </div>
+        </div>
+        
+        <!-- লোডার, অ্যালার্ট, কনফেটি -->
+        <div id="loader" class="loader"></div>
+        <div id="alertPopup" class="alert-popup"></div>
+        <div id="confettiContainer" class="confetti-container"></div>
+
+        <!-- নেভিগেশন বার -->
+        <nav class="nav-bar">
+            <button class="nav-button active" data-screen="tapZoneScreen"><span class="icon">🖐</span><span class="nav-text">ট্যাপ</span></button>
+            <button class="nav-button" data-screen="shopZoneScreen"><span class="icon">🏪</span><span class="nav-text">দোকান</span></button>
+            <button class="nav-button" data-screen="profileZoneScreen"><span class="icon">👤</span><span class="nav-text">প্রোফাইল</span></button>
+            <button class="nav-button" data-screen="taskZoneScreen"><span class="icon">🎮</span><span class="nav-text">মিশন</span></button>
+            <button class="nav-button" data-screen="rankZoneScreen"><span class="icon">🌍</span><span class="nav-text">র‍্যাংকিং</span></button>
+            <button class="nav-button" data-screen="eventZoneScreen"><span class="icon">🎉</span><span class="nav-text">ইভেন্ট</span></button>
+        </nav>
+    </div>
+    
+    <audio id="tapSound" preload="auto"></audio>
+    <audio id="upgradeSound" preload="auto"></audio>
+    <audio id="taskCompleteSound" preload="auto"></audio>
+    <audio id="comboBreakSound" preload="auto"></audio>
+    <audio id="levelUpSound" preload="auto"></audio>
+    <audio id="criticalTapSound" preload="auto"></audio>
+
+    <script>
+    // --- গেম স্টেট এবং ভেরিয়েবল ---
+    let gameState = {
+        coins: 0,
+        tapPower: 1,
+        autoTapPower: 0, // প্রতি সেকেন্ডে অটো আয়
+        username: 'অতিথি',
+        highScore: 0,
+        todayTaps: 0,
+        totalTaps: 0,
+        lastPlayedDate: new Date().toISOString().slice(0,10),
+        level: 1,
+        xp: 0,
+        theme: 'dark',
+        soundEnabled: true,
+        shopItems: {}, // আপগ্রেডের লেভেল { 'itemId': { level: 0, purchased: 0 } }
+        completedTasks: [], // টাস্ক আইডি যেগুলো একবার সম্পন্ন হয়েছে
+        activeDailyTasks: {}, // { 'taskId': { completedToday: false, lastCompletionDate: '' } }
+        
+        // ট্যাপ জোন ফিচার
+        tapCombo: 0,
+        maxCombo: 0,
+        criticalTapChance: 0.05, // 5%
+        criticalTapMultiplier: 3,
+        baseTapMultiplier: 1, // বেস মাল্টিপ্লায়ার, পাওয়ার আপ দিয়ে বুস্ট হতে পারে
+        
+        comboTimeoutId: null,
+        lastTapTime: 0,
+        comboThreshold: 10, // এই সংখ্যক ট্যাপে কম্বো মাল্টিপ্লায়ার বাড়ে (এখন সরাসরি কম্বো সংখ্যাই মাল্টিপ্লায়ার)
+        comboBreakGracePeriod: 2000, // ms, কম্বো ব্রেক হওয়ার আগে সময়
+
+        timeBonus: {
+            active: false,
+            endsAt: 0,
+            duration: 30000, // ms
+            nextAvailableAt: 0,
+            cooldown: 5 * 60 * 1000, // 5 মিনিট
+            multiplierEffect: 2,
+        },
+        
+        energy: {
+            current: 100,
+            max: 100,
+            rechargeRate: 1, // প্রতি সেকেন্ডে
+            lastRechargeTime: Date.now(),
+            enabled: false, // শুরুতে এনার্জি সিস্টেম বন্ধ থাকবে
+        },
+        
+        powerMode: {
+            active: false,
+            endsAt: 0,
+            duration: 10000, // 10 সেকেন্ড
+            cooldown: 60 * 1000, // 1 মিনিট
+            nextAvailableAt: 0,
+            effectMultiplier: 3, // ট্যাপ পাওয়ার ৩ গুণ হবে
+        },
+
+        // প্রোফাইল ও অন্যান্য
+        loginStreak: 0,
+        lastLoginDate: '',
+        gameStats: { // বিস্তারিত পরিসংখ্যান
+            totalGameTime: 0, // সেকেন্ডে
+            tapSessions: 0,
+            avgTapsPerSecond: 0,
+            // আরও অনেক কিছু যোগ করা যায়
+        },
+        
+        // ইভেন্ট ডেটা
+        eventData: {
+            dailyLoginClaimedToday: false,
+            wheelSpinsToday: 0,
+            maxWheelSpinsPerDay: 1,
+            // অন্যান্য ইভেন্টের ডেটা
+        },
+        currentLocalLeaderboard: [], // লোকাল লিডারবোর্ডের ক্যাশড ডেটা
+    };
+
+    const LEVEL_XP_THRESHOLD = [0, 100, 250, 500, 1000, 2000, 4000, 7500, 12000, 20000]; // প্রতি লেভেলের জন্য প্রয়োজনীয় XP (ক্রমবর্ধমান)
+
+    // --- DOM উপাদানসমূহ --- (অনেকগুলো, তাই সংক্ষিপ্ত করছি)
+    const screens = document.querySelectorAll('.screen');
+    const navButtons = document.querySelectorAll('.nav-button');
+    const loader = document.getElementById('loader');
+    const alertPopup = document.getElementById('alertPopup');
+
+    // ট্যাপ জোন
+    const totalCoinsTapEl = document.getElementById('totalCoinsTap');
+    const tapButton = document.getElementById('tapButton');
+    const tapButtonFeedbackContainer = document.getElementById('tapButtonFeedbackContainer');
+    const tapPowerStatEl = document.getElementById('tapPowerStat');
+    const comboMultiplierStatEl = document.getElementById('comboMultiplierStat');
+    const maxComboStatEl = document.getElementById('maxComboStat');
+    const comboProgressBar = document.getElementById('comboProgressBar');
+    const comboBreakAlertEl = document.getElementById('comboBreakAlert');
+    const criticalChanceStatEl = document.getElementById('criticalChanceStat');
+    const criticalMultiplierStatEl = document.getElementById('criticalMultiplierStat');
+    const timeBonusBarContainer = document.getElementById('timeBonusBarContainer');
+    const timeBonusProgress = document.getElementById('timeBonusProgress');
+    const timeBonusMessageEl = document.getElementById('timeBonusMessage');
+    const energyBarContainer = document.getElementById('energyBarContainer');
+    const energyBar = document.getElementById('energyBar');
+    const energyStatEl = document.getElementById('energyStat');
+    const energyValueEl = document.getElementById('energyValue');
+    const maxEnergyValueEl = document.getElementById('maxEnergyValue');
+    const activatePowerModeButton = document.getElementById('activatePowerModeButton');
+
+
+    // দোকান ঘর
+    const totalCoinsShopEl = document.getElementById('totalCoinsShop');
+    const shopItemsContainer = document.getElementById('shopItemsContainer');
+    const refreshShopButton = document.getElementById('refreshShopButton');
+
+    // প্রোফাইল জোন
+    const profileAvatarEl = document.getElementById('profileAvatar');
+    const usernameDisplayEl = document.getElementById('usernameDisplay');
+    const profileTotalCoinsEl = document.getElementById('profileTotalCoins');
+    const profileHighScoreEl = document.getElementById('profileHighScore');
+    const profileTodayTapsEl = document.getElementById('profileTodayTaps');
+    const profileTotalTapsEl = document.getElementById('profileTotalTaps');
+    const profileLevelEl = document.getElementById('profileLevel');
+    const profileXPEl = document.getElementById('profileXP');
+    const nextLevelXPEl = document.getElementById('nextLevelXP');
+    const profileMaxComboEl = document.getElementById('profileMaxCombo');
+    const badgesContainerEl = document.getElementById('badgesContainer');
+    const usernameInput = document.getElementById('usernameInput');
+    const saveUsernameButton = document.getElementById('saveUsernameButton');
+    const themeToggleButton = document.getElementById('themeToggleButton');
+    const soundToggleButton = document.getElementById('soundToggleButton');
+    const resetProgressButton = document.getElementById('resetProgressButton');
+
+    // মিশন জোন
+    const tasksContainer = document.getElementById('tasksContainer');
+    const taskHistoryListEl = document.getElementById('taskHistoryList');
+    const confettiContainer = document.getElementById('confettiContainer');
+
+    // র‍্যাংকিং জোন
+    const rankingListContainer = document.getElementById('rankingListContainer');
+    const rankingCategorySelect = document.getElementById('rankingCategory');
+    const updateRankButton = document.getElementById('updateRankButton');
+
+    // ইভেন্ট জোন
+    const eventItemsContainer = document.getElementById('eventItemsContainer');
+    
+    // সাউন্ড (Data URL এর পরিবর্তে ছোট, বাস্তবসম্মত .wav ব্যবহার করা ভালো, তবে এখানে Placeholder রাখছি)
+    const sounds = {
+        tap: document.getElementById('tapSound'),
+        upgrade: document.getElementById('upgradeSound'),
+        taskComplete: document.getElementById('taskCompleteSound'),
+        comboBreak: document.getElementById('comboBreakSound'),
+        levelUp: document.getElementById('levelUpSound'),
+        criticalTap: document.getElementById('criticalTapSound'),
+    };
+    const soundFiles = { // Base64 encoded small wav files (example)
+        tap: "data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=", // সংক্ষিপ্ত, ক্লিক সাউন্ড
+        upgrade: "data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YThAAAAKAExvb3AgV2F2AAA=", // পাওয়ার আপ সাউন্ড
+        taskComplete: "data:audio/wav;base64,UklGRkIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAkAAAA", // অ্যাচিভমেন্ট সাউন্ড
+        comboBreak: "data:audio/wav;base64,UklGRjoAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YRIADgBEAFUAUwBUAFIAVQBDAFQARQA=", // ভুল বা ব্রেক সাউন্ড
+        levelUp: "data:audio/wav;base64,UklGRkIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAkAAAA", // লেভেল আপ সাউন্ড
+        criticalTap: "data:audio/wav;base64,UklGRlIAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YThAAAAKAExvb3AgV2F2AAA=", // বিশেষ ট্যাপ সাউন্ড
+    };
+    function loadSounds() {
+        for (const key in sounds) {
+            if (soundFiles[key]) sounds[key].src = soundFiles[key];
+        }
+    }
+    function playSound(soundKey) {
+        if (gameState.soundEnabled && sounds[soundKey]) {
+            sounds[soundKey].currentTime = 0;
+            sounds[soundKey].play().catch(e => {/* console.warn("সাউন্ড প্লেতে সমস্যা:", e) */});
+        }
+    }
+    soundToggleButton.addEventListener('click', () => {
+        gameState.soundEnabled = !gameState.soundEnabled;
+        soundToggleButton.textContent = `সাউন্ড: ${gameState.soundEnabled ? 'অন' : 'অফ'}`;
+        saveGame();
+    });
+
+
+    // --- লোকাল স্টোরেজ ফাংশন ---
+    function saveGame() {
+        try {
+            localStorage.setItem('tapProGameData', JSON.stringify(gameState));
+        } catch (e) {
+            console.error("গেম সেভ করতে সমস্যা:", e);
+            showTemporaryAlert("গেম সেভ করা যায়নি। স্টোরেজ পূর্ণ হতে পারে।", "danger");
+        }
+    }
+
+    function loadGame() {
+        showLoader();
+        const savedData = localStorage.getItem('tapProGameData');
+        if (savedData) {
+            const loadedState = JSON.parse(savedData);
+            // gameState এর প্রতিটি প্রপার্টি আলাদাভাবে মার্জ করা ভালো
+            for (const key in loadedState) {
+                if (gameState.hasOwnProperty(key)) {
+                    if (typeof gameState[key] === 'object' && gameState[key] !== null && !Array.isArray(gameState[key])) {
+                        // নেস্টেড অবজেক্টের জন্য ডিপ মার্জ (এখানে gameState.shopItems, timeBonus ইত্যাদি)
+                        gameState[key] = { ...gameState[key], ...loadedState[key] };
+                    } else {
+                        gameState[key] = loadedState[key];
+                    }
+                } else { // যদি সেভ করা ডেটায় নতুন কোনো কী থাকে যা ডিফল্টে নেই
+                    gameState[key] = loadedState[key];
+                }
+            }
+
+            // তারিখ চেক করে দৈনিক ডেটা রিসেট
+            const today = new Date().toISOString().slice(0,10);
+            if (gameState.lastPlayedDate !== today) {
+                gameState.todayTaps = 0;
+                gameState.lastPlayedDate = today;
+                // দৈনিক টাস্ক রিসেট
+                Object.keys(gameState.activeDailyTasks).forEach(taskId => {
+                    gameState.activeDailyTasks[taskId].completedToday = false;
+                });
+                // দৈনিক ইভেন্ট ডেটা রিসেট
+                gameState.eventData.dailyLoginClaimedToday = false;
+                gameState.eventData.wheelSpinsToday = 0;
+
+                // লগইন স্ট্রিক
+                const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+                if (gameState.lastLoginDate === yesterday) {
+                    gameState.loginStreak++;
+                } else {
+                    gameState.loginStreak = 1; // স্ট্রিক ব্রেক হলে ১ থেকে শুরু
+                }
+                gameState.lastLoginDate = today;
+
+            } else { // একই দিনে খেললে স্ট্রিক বাড়ে না, কিন্তু lastLoginDate আজকের তারিখ হবে
+                 if (!gameState.lastLoginDate || gameState.lastLoginDate !== today) {
+                    gameState.loginStreak = 1; // প্রথমবার বা অনেক দিন পর
+                    gameState.lastLoginDate = today;
+                 }
+            }
+        }
+        
+        // Initialize shopItems if they don't exist or miss properties
+        SHOP_UPGRADES.forEach(upgrade => {
+            if (!gameState.shopItems[upgrade.id]) {
+                gameState.shopItems[upgrade.id] = { level: 0, purchased: 0 };
+            } else { // Ensure all properties exist
+                 gameState.shopItems[upgrade.id] = {
+                    level: gameState.shopItems[upgrade.id].level || 0,
+                    purchased: gameState.shopItems[upgrade.id].purchased || 0,
+                 };
+            }
+        });
+        
+        // এনার্জি ও পাওয়ার মোড-এর nextAvailableAt চেক ও আপডেট
+        const now = Date.now();
+        if (gameState.energy.enabled && gameState.energy.lastRechargeTime < now) {
+            const timeDiffSeconds = Math.floor((now - gameState.energy.lastRechargeTime) / 1000);
+            gameState.energy.current = Math.min(gameState.energy.max, gameState.energy.current + timeDiffSeconds * gameState.energy.rechargeRate);
+            gameState.energy.lastRechargeTime = now;
+        }
+        if(gameState.powerMode.nextAvailableAt < now) gameState.powerMode.nextAvailableAt = 0; // Cooldown finished
+        if(gameState.timeBonus.nextAvailableAt < now) gameState.timeBonus.nextAvailableAt = 0; // Cooldown finished
+
+
+        applyTheme(gameState.theme);
+        soundToggleButton.textContent = `সাউন্ড: ${gameState.soundEnabled ? 'অন' : 'অফ'}`;
+        updateAllUI();
+        hideLoader();
+    }
+    
+    function showLoader() { loader.style.display = 'block'; }
+    function hideLoader() { loader.style.display = 'none'; }
+
+    // --- UI আপডেট ফাংশন ---
+    function formatNumber(num) { // বড় সংখ্যা সংক্ষিপ্ত করার জন্য
+        num = Math.floor(num);
+        if (num < 1000) return num.toLocaleString('bn-BD');
+        const suffixes = ["", " হাজার", " লক্ষ", " কোটি"];
+        let i = 0;
+        while (num >= 1000 && i < suffixes.length -1 ) {
+            if (i < 1) num /= 1000; // হাজার
+            else num /= 100; // লক্ষ, কোটি
+            i++;
+        }
+        return parseFloat(num.toFixed(1)).toLocaleString('bn-BD') + suffixes[i];
+    }
+
+    function updateCoinDisplay() {
+        const formattedCoins = formatNumber(gameState.coins);
+        if(totalCoinsTapEl) totalCoinsTapEl.textContent = formattedCoins;
+        if(totalCoinsShopEl) totalCoinsShopEl.textContent = formattedCoins;
+        if(profileTotalCoinsEl) profileTotalCoinsEl.textContent = formattedCoins;
+    }
+
+    function getCurrentTapMultiplier() {
+        let multiplier = gameState.baseTapMultiplier;
+        if (gameState.timeBonus.active) multiplier *= gameState.timeBonus.multiplierEffect;
+        if (gameState.powerMode.active) multiplier *= gameState.powerMode.effectMultiplier;
+        // অন্যান্য মাল্টিপ্লায়ার (যেমন শপ আইটেম থেকে) এখানে যোগ হতে পারে
+        return multiplier;
+    }
+
+    function updateTapStats() {
+        const currentTapMultiplier = getCurrentTapMultiplier();
+        if(tapPowerStatEl) tapPowerStatEl.textContent = formatNumber(gameState.tapPower * currentTapMultiplier);
+        if(comboMultiplierStatEl) comboMultiplierStatEl.textContent = `${gameState.tapCombo > 0 ? gameState.tapCombo : 1}`;
+        if(maxComboStatEl) maxComboStatEl.textContent = formatNumber(gameState.maxCombo);
+        if(comboProgressBar) comboProgressBar.style.width = `${Math.min(100, (gameState.tapCombo / (gameState.comboThreshold * 2)) * 100)}%`; // কম্বো থ্রেশহোল্ডের দ্বিগুণ পর্যন্ত বার দেখাবে
+        if(criticalChanceStatEl) criticalChanceStatEl.textContent = `${(gameState.criticalTapChance * 100).toFixed(1)}`;
+        if(criticalMultiplierStatEl) criticalMultiplierStatEl.textContent = `${gameState.criticalTapMultiplier}`;
+
+        if(gameState.energy.enabled) {
+            energyBarContainer.style.display = 'block';
+            energyStatEl.style.display = 'block';
+            energyValueEl.textContent = Math.floor(gameState.energy.current);
+            maxEnergyValueEl.textContent = gameState.energy.max;
+            energyBar.style.width = `${(gameState.energy.current / gameState.energy.max) * 100}%`;
+        } else {
+            energyBarContainer.style.display = 'none';
+            energyStatEl.style.display = 'none';
+        }
+
+        if(activatePowerModeButton) {
+            if (gameState.powerMode.nextAvailableAt === 0 && !gameState.powerMode.active) {
+                activatePowerModeButton.style.display = 'inline-block';
+                activatePowerModeButton.textContent = `পাওয়ার মোড (${gameState.powerMode.duration/1000}s)`;
+                activatePowerModeButton.disabled = false;
+            } else if (gameState.powerMode.active) {
+                activatePowerModeButton.style.display = 'inline-block';
+                activatePowerModeButton.textContent = `সক্রিয়! ${Math.ceil((gameState.powerMode.endsAt - Date.now())/1000)}s`;
+                activatePowerModeButton.disabled = true;
+            } else { // Cooldown
+                activatePowerModeButton.style.display = 'inline-block';
+                activatePowerModeButton.textContent = `কুলডাউন ${Math.ceil((gameState.powerMode.nextAvailableAt - Date.now())/1000)}s`;
+                activatePowerModeButton.disabled = true;
+            }
+        }
+    }
+    
+    function updateProfileInfo() {
+        if(usernameDisplayEl) usernameDisplayEl.textContent = gameState.username;
+        if(profileAvatarEl) profileAvatarEl.textContent = gameState.username.substring(0,2).toUpperCase() || '👤';
+        if(profileHighScoreEl) profileHighScoreEl.textContent = formatNumber(gameState.highScore);
+        if(profileTodayTapsEl) profileTodayTapsEl.textContent = formatNumber(gameState.todayTaps);
+        if(profileTotalTapsEl) profileTotalTapsEl.textContent = formatNumber(gameState.totalTaps);
+        if(profileLevelEl) profileLevelEl.textContent = gameState.level;
+        if(profileXPEl) profileXPEl.textContent = formatNumber(gameState.xp);
+        if(nextLevelXPEl) nextLevelXPEl.textContent = formatNumber(LEVEL_XP_THRESHOLD[gameState.level] || 'সর্বোচ্চ');
+        if(profileMaxComboEl) profileMaxComboEl.textContent = formatNumber(gameState.maxCombo);
+        renderBadges();
+    }
+
+    function updateAllUI() {
+        updateCoinDisplay();
+        updateTapStats();
+        updateProfileInfo();
+        renderShopItems();
+        renderTasks();
+        renderRankings();
+        renderEvents();
+    }
+
+    // --- SPA নেভিগেশন ---
+    function switchScreen(screenId) {
+        screens.forEach(screen => screen.classList.remove('active'));
+        navButtons.forEach(button => button.classList.remove('active'));
+        document.getElementById(screenId)?.classList.add('active');
+        document.querySelector(`.nav-button[data-screen="${screenId}"]`)?.classList.add('active');
+        updateAllUI(); // স্ক্রিন পরিবর্তনের সময় UI আপডেট নিশ্চিত করুন
+    }
+    navButtons.forEach(button => {
+        button.addEventListener('click', () => switchScreen(button.dataset.screen));
+    });
+
+    // --- ট্যাপ জোন লজিক ---
+    tapButton.addEventListener('mousedown', (event) => { // click এর পরিবর্তে mousedown দ্রুত রেসপন্স দেয়
+        if (event.button === 0) { // শুধুমাত্র বাম ক্লিক
+            handleTap(event);
+        }
+    });
+    tapButton.addEventListener('touchstart', (event) => {
+        event.preventDefault();
+        handleTap(event.touches[0]);
+    }, { passive: false });
+
+    function handleTap(event) {
+        if (gameState.energy.enabled && gameState.energy.current < 1) {
+            showTemporaryAlert("অপর্যাপ্ত এনার্জি!", "warning");
+            return;
+        }
+        if (gameState.energy.enabled) {
+            gameState.energy.current -= 1; // প্রতি ট্যাপে ১ এনার্জি খরচ
+        }
+
+        playSound('tap');
+        const tapMultiplier = getCurrentTapMultiplier();
+        let rewardAmount = gameState.tapPower * tapMultiplier * (gameState.tapCombo > 0 ? gameState.tapCombo : 1);
+        let isCritical = false;
+
+        if (Math.random() < gameState.criticalTapChance) {
+            rewardAmount *= gameState.criticalTapMultiplier;
+            isCritical = true;
+            playSound('criticalTap');
+            // ক্রিটিক্যাল ট্যাপ ভিজ্যুয়াল ফিডব্যাক
+            const flash = document.createElement('div');
+            flash.className = 'critical-flash';
+            tapButtonWrapper.appendChild(flash);
+            setTimeout(() => flash.remove(), 500);
+        }
+        
+        gameState.coins += rewardAmount;
+        gameState.todayTaps++;
+        gameState.totalTaps++;
+        gameState.highScore = Math.max(gameState.highScore, gameState.coins);
+        addXP(1 + Math.floor(gameState.tapCombo / 10)); // কম্বোর উপর ভিত্তি করে অতিরিক্ত XP
+
+        // ফ্লোটিং রিওয়ার্ড অ্যানিমেশন
+        const rewardEl = document.createElement('div');
+        rewardEl.className = 'floating-reward';
+        rewardEl.textContent = `+${formatNumber(rewardAmount)}` + (isCritical ? ' 🔥' : '');
+        if(isCritical) rewardEl.style.color = 'var(--danger-color)';
+        
+        const rect = tapButton.getBoundingClientRect();
+        const x = (event.clientX ? (event.clientX - rect.left) : (rect.width / 2)) + (Math.random()*40-20); // একটু র‍্যান্ডম পজিশন
+        const y = (event.clientY ? (event.clientY - rect.top) : (rect.height / 2)) + (Math.random()*20-10);
+        rewardEl.style.left = `${Math.max(0, Math.min(rect.width - 30, x - 15))}px`;
+        rewardEl.style.top = `${Math.max(0, Math.min(rect.height - 20, y - 10))}px`;
+        tapButtonFeedbackContainer.appendChild(rewardEl);
+        setTimeout(() => rewardEl.remove(), 1200);
+
+        // কম্বো লজিক
+        const now = Date.now();
+        if (gameState.lastTapTime && (now - gameState.lastTapTime < gameState.comboBreakGracePeriod)) {
+            gameState.tapCombo++;
+            gameState.maxCombo = Math.max(gameState.maxCombo, gameState.tapCombo);
+            // কম্বো থ্রেশহোল্ডে বিশেষ কিছু (যেমন সাউন্ড বা ছোট অ্যানিমেশন)
+            if (gameState.tapCombo > 0 && gameState.tapCombo % gameState.comboThreshold === 0) {
+                // showTemporaryAlert(`${gameState.tapCombo} কম্বো!`, 'info', 800);
+                // একটি ছোট অ্যানিমেশন বা সাউন্ড যোগ করা যেতে পারে
+            }
+        } else {
+            if (gameState.tapCombo > 3) { // ৩ এর বেশি কম্বো হলে ব্রেক অ্যালার্ট
+                comboBreakAlertEl.style.display = 'block';
+                playSound('comboBreak');
+                setTimeout(() => comboBreakAlertEl.style.display = 'none', 1500);
+            }
+            gameState.tapCombo = 1; // রিসেট বা শুরু
+        }
+        gameState.lastTapTime = now;
+        
+        clearTimeout(gameState.comboTimeoutId);
+        gameState.comboTimeoutId = setTimeout(() => {
+            if (Date.now() - gameState.lastTapTime >= gameState.comboBreakGracePeriod && gameState.tapCombo > 0) {
+                 if (gameState.tapCombo > 3) comboBreakAlertEl.style.display = 'block';
+                 playSound('comboBreak');
+                 setTimeout(() => comboBreakAlertEl.style.display = 'none', 1500);
+                 gameState.tapCombo = 0;
+                 updateTapStats();
+            }
+        }, gameState.comboBreakGracePeriod);
+
+        updateCoinDisplay();
+        updateTapStats();
+        saveGame();
+        checkAllTasksCompletion();
+    }
+    
+    // পাওয়ার মোড অ্যাক্টিভেট
+    activatePowerModeButton.addEventListener('click', () => {
+        if (gameState.powerMode.nextAvailableAt === 0 && !gameState.powerMode.active) {
+            gameState.powerMode.active = true;
+            gameState.powerMode.endsAt = Date.now() + gameState.powerMode.duration;
+            gameState.powerMode.nextAvailableAt = gameState.powerMode.endsAt + gameState.powerMode.cooldown;
+            showTemporaryAlert(`পাওয়ার মোড (${gameState.powerMode.duration/1000}s) সক্রিয়! ট্যাপ পাওয়ার x${gameState.powerMode.effectMultiplier}!`, 'success');
+            updateTapStats();
+        }
+    });
+
+    // --- টাইম বোনাস ও অটো ট্যাপ লজিক (গেম লুপে) ---
+    function gameLoop() {
+        const now = Date.now();
+
+        // অটো ট্যাপ
+        if (gameState.autoTapPower > 0) {
+            const autoTapReward = gameState.autoTapPower * getCurrentTapMultiplier(); // অটো ট্যাপও মাল্টিপ্লায়ার পাবে
+            gameState.coins += autoTapReward / (1000 / GAME_LOOP_INTERVAL); // প্রতি লুপে আয়ের অংশ
+            if(document.getElementById('tapZoneScreen').classList.contains('active')) updateCoinDisplay(); // শুধু ট্যাপ জোনে থাকলে কয়েন আপডেট
+        }
+
+        // টাইম বোনাস চেক ও হ্যান্ডলিং
+        if (gameState.timeBonus.active && now >= gameState.timeBonus.endsAt) {
+            gameState.timeBonus.active = false;
+            timeBonusBarContainer.style.display = 'none';
+            timeBonusMessageEl.style.display = 'none';
+            gameState.timeBonus.nextAvailableAt = now + gameState.timeBonus.cooldown;
+            updateTapStats();
+            showTemporaryAlert('সময় সীমিত বোনাস শেষ!', 'info');
+        } else if (gameState.timeBonus.active) {
+            const timeLeft = gameState.timeBonus.endsAt - now;
+            timeBonusProgress.style.width = `${(timeLeft / gameState.timeBonus.duration) * 100}%`;
+        }
+        // টাইম বোনাস শুরু করার জন্য (ইভেন্ট বা শপ থেকে অ্যাক্টিভেট করা যেতে পারে)
+        // এখানে একটি ডামি কন্ডিশন রাখা হলো, যা ইভেন্ট জোন থেকে কল করা হবে
+        // if (!gameState.timeBonus.active && now >= gameState.timeBonus.nextAvailableAt) {
+        //     activateTimeBonus(); // এটি এখন ম্যানুয়ালি কল করতে হবে
+        // }
+
+
+        // এনার্জি রিচার্জ
+        if (gameState.energy.enabled && gameState.energy.current < gameState.energy.max) {
+            const timeDiffSeconds = (now - gameState.energy.lastRechargeTime) / 1000;
+            if (timeDiffSeconds >= 1) { // প্রতি সেকেন্ডে রিচার্জ
+                gameState.energy.current = Math.min(gameState.energy.max, gameState.energy.current + Math.floor(timeDiffSeconds) * gameState.energy.rechargeRate);
+                gameState.energy.lastRechargeTime = now;
+                if(document.getElementById('tapZoneScreen').classList.contains('active')) updateTapStats();
+            }
+        }
+        
+        // পাওয়ার মোড চেক
+        if (gameState.powerMode.active && now >= gameState.powerMode.endsAt) {
+            gameState.powerMode.active = false;
+            showTemporaryAlert('পাওয়ার মোড শেষ!', 'info');
+            updateTapStats();
+        }
+        if (!gameState.powerMode.active && gameState.powerMode.nextAvailableAt > 0 && now >= gameState.powerMode.nextAvailableAt) {
+            gameState.powerMode.nextAvailableAt = 0; // Cooldown finished
+            updateTapStats(); // বাটন আপডেট করার জন্য
+        }
+
+
+        // গেম টাইম গণনা
+        gameState.gameStats.totalGameTime += GAME_LOOP_INTERVAL / 1000;
+
+        saveGame(); // নির্দিষ্ট সময় পর পর সেভ
+    }
+    const GAME_LOOP_INTERVAL = 200; // ms (5 times per second) - ঘন ঘন সেভ না করাই ভালো
+    setInterval(gameLoop, GAME_LOOP_INTERVAL);
+    // ঘন ঘন সেভের পরিবর্তে নির্দিষ্ট সময় পর বা গুরুত্বপূর্ণ অ্যাকশনের পর সেভ করা ভালো
+    // setInterval(saveGame, 30000); // প্রতি ৩০ সেকেন্ডে সেভ
+
+    function activateTimeBonus() { // এই ফাংশনটি এখন ম্যানুয়ালি কল করতে হবে (যেমন ইভেন্ট থেকে)
+        if (gameState.timeBonus.active || Date.now() < gameState.timeBonus.nextAvailableAt) {
+             showTemporaryAlert(`টাইম বোনাস এখন недоступен। ${Math.ceil((gameState.timeBonus.nextAvailableAt - Date.now())/1000)}s পর আবার চেষ্টা করুন।`, "warning");
+            return;
+        }
+        gameState.timeBonus.active = true;
+        gameState.timeBonus.endsAt = Date.now() + gameState.timeBonus.duration;
+        
+        timeBonusBarContainer.style.display = 'block';
+        timeBonusMessageEl.textContent = `সময় সীমিত বোনাস সক্রিয়! ট্যাপ x${gameState.timeBonus.multiplierEffect}!`;
+        timeBonusMessageEl.style.display = 'block';
+        showTemporaryAlert('সময় সীমিত বোনাস শুরু!', 'success');
+        updateTapStats();
+    }
+
+
+    // --- দোকান ঘর লজিক ---
+    // priceMultiplier: 1.15 মানে প্রতি লেভেলে দাম ১৫% বাড়ে
+    const SHOP_UPGRADES = [
+        // ট্যাপ জোন
+        { id: 'tapPower', name: '👆 ট্যাপ পাওয়ার', description: 'প্রতি ট্যাপে বেশি কয়েন।', basePrice: 10, priceMultiplier: 1.15, maxLevel: 100, type: 'tap', effect: (level) => gameState.tapPower = 1 + level * (1 + Math.floor(level/10)) }, // প্রতি ১০ লেভেলে বুস্ট বেশি
+        { id: 'criticalChance', name: '🎯 ক্রিটিক্যাল চান্স', description: 'ক্রিটিক্যাল হিটের সম্ভাবনা ০.১% বাড়ান।', basePrice: 150, priceMultiplier: 1.25, maxLevel: 50, type: 'tap', effect: (level) => gameState.criticalTapChance = 0.05 + (level * 0.001) },
+        { id: 'criticalMultiplier', name: '💥 ক্রিটিক্যাল মাল্টিপ্লায়ার', description: 'ক্রিটিক্যাল হিটের গুণক ০.১ বাড়ান।', basePrice: 300, priceMultiplier: 1.3, maxLevel: 30, type: 'tap', effect: (level) => gameState.criticalTapMultiplier = 3 + (level * 0.1) },
+        { id: 'comboBoost', name: '🔗 কম্বো গ্রেস পিরিয়ড', description: 'কম্বো ধরে রাখার সময় ০.০৫ সেকেন্ড বাড়ান।', basePrice: 200, priceMultiplier: 1.2, maxLevel: 20, type: 'tap', effect: (level) => gameState.comboBreakGracePeriod = 2000 + (level * 50)},
+        
+        // অটোমেশন ও এনার্জি
+        { id: 'autoTap', name: '🤖 অটো ট্যাপ', description: 'প্রতি সেকেন্ডে ০.৫ কয়েন আয় (ট্যাপ পাওয়ারের গুণিতক নয়)।', basePrice: 500, priceMultiplier: 1.4, maxLevel: 50, type: 'automation', effect: (level) => gameState.autoTapPower = level * 0.5 },
+        { id: 'offlineEarnings', name: '😴 অফলাইন আয়', description: 'অফ থাকাকালীন আয়ের হার বাড়ান (অটো-ট্যাপের % হিসেবে)।', basePrice: 1000, priceMultiplier: 1.5, maxLevel: 20, type: 'automation', effect: (level) => { /* gameState.offlineEarningMultiplier = level * 0.05 */ }}, // এই ফিচার 구현 করতে হবে
+        { id: 'maxEnergy', name: '⚡ সর্বোচ্চ এনার্জি', description: 'সর্বোচ্চ এনার্জি ১০ বাড়ান।', basePrice: 100, priceMultiplier: 1.2, maxLevel: 20, type: 'energy', condition: () => gameState.energy.enabled, effect: (level) => gameState.energy.max = 100 + level * 10 },
+        { id: 'energyRecharge', name: '🔋 এনার্জি রিচার্জ', description: 'প্রতি সেকেন্ডে এনার্জি রিচার্জ ০.২ বাড়ান।', basePrice: 250, priceMultiplier: 1.3, maxLevel: 15, type: 'energy', condition: () => gameState.energy.enabled, effect: (level) => gameState.energy.rechargeRate = 1 + level * 0.2 },
+        { id: 'enableEnergySystem', name: '💡 এনার্জি সিস্টেম', description: 'এনার্জি সিস্টেম চালু করুন (গেম আরও চ্যালেঞ্জিং হবে)।', basePrice: 5000, priceMultiplier: 1, maxLevel: 1, type: 'special', effect: (level) => gameState.energy.enabled = (level > 0) },
+
+        // বোনাস ও পাওয়ার আপ
+        { id: 'timeBonusDuration', name: '⏱️ টাইম বোনাস সময়কাল', description: 'টাইম বোনাসের সময় ৫ সেকেন্ড বাড়ান।', basePrice: 400, priceMultiplier: 1.25, maxLevel: 10, type: 'bonus', effect: (level) => gameState.timeBonus.duration = 30000 + level * 5000 },
+        { id: 'powerModeDuration', name: '🚀 পাওয়ার মোড সময়কাল', description: 'পাওয়ার মোডের সময় ২ সেকেন্ড বাড়ান।', basePrice: 600, priceMultiplier: 1.3, maxLevel: 10, type: 'bonus', effect: (level) => gameState.powerMode.duration = 10000 + level * 2000 },
+        { id: 'xpBoost', name: '🌟 এক্সপি বুস্ট', description: 'এক্সপি অর্জন ১০% বৃদ্ধি করুন।', basePrice: 1000, priceMultiplier: 1.8, maxLevel: 5, type: 'profile', effect: (level) => { /* gameState.xpMultiplier = 1 + level * 0.1 */ }}, // এই ফিচার 구현 করতে হবে
+
+        // কসমেটিক (উদাহরণ)
+        { id: 'tapButtonSkin1', name: '🎨 ট্যাপ বাটন স্কিন ১', description: 'ট্যাপ বাটনের জন্য নতুন ডিজাইন।', basePrice: 2000, priceMultiplier: 1, maxLevel: 1, type: 'cosmetic', effect: (level) => { if(level>0) tapButton.style.backgroundImage = 'radial-gradient(circle, #ffeb3b 0%, #ff9800 100%)';} },
+    ];
+
+    function getUpgradePrice(upgrade) {
+        const level = gameState.shopItems[upgrade.id] ? gameState.shopItems[upgrade.id].level : 0;
+        if (upgrade.maxLevel && level >= upgrade.maxLevel) return Infinity; // সর্বোচ্চ লেভেলে পৌঁছে গেলে আর কেনা যাবে না
+        return Math.floor(upgrade.basePrice * Math.pow(upgrade.priceMultiplier, level));
+    }
+
+    function renderShopItems() {
+        if (!shopItemsContainer) return;
+        shopItemsContainer.innerHTML = '';
+        SHOP_UPGRADES.forEach(upgrade => {
+            if (upgrade.condition && !upgrade.condition()) return; // শর্ত পূরণ না হলে আইটেম দেখাবে না
+
+            const currentLevel = gameState.shopItems[upgrade.id] ? gameState.shopItems[upgrade.id].level : 0;
+            const price = getUpgradePrice(upgrade);
+
+            const itemDiv = document.createElement('div');
+            itemDiv.classList.add('shop-item', 'card');
+            
+            let levelText = `(লেভেল ${currentLevel}${upgrade.maxLevel ? '/' + upgrade.maxLevel : ''})`;
+            if (upgrade.maxLevel && currentLevel >= upgrade.maxLevel) levelText = '(সর্বোচ্চ লেভেল)';
+
+            const infoDiv = document.createElement('div');
+            infoDiv.classList.add('shop-item-info');
+            infoDiv.innerHTML = `
+                <h3>${upgrade.name} ${levelText}</h3>
+                <p>${upgrade.description}</p>
+                ${(upgrade.maxLevel && currentLevel >= upgrade.maxLevel) ? '<p style="color:var(--success-color);">সম্পূর্ণ আপগ্রেড!</p>' : `<p>পরবর্তী লেভেল: ${formatNumber(price)} কয়েন</p>`}
+            `;
+
+            const buyButton = document.createElement('button');
+            buyButton.classList.add('button');
+            buyButton.textContent = (upgrade.maxLevel && currentLevel >= upgrade.maxLevel) ? 'কেনা হয়েছে' : 'কিনুন';
+            if (gameState.coins < price || (upgrade.maxLevel && currentLevel >= upgrade.maxLevel)) {
+                buyButton.disabled = true;
+            }
+            buyButton.onclick = () => buyUpgrade(upgrade.id);
+
+            itemDiv.appendChild(infoDiv);
+            itemDiv.appendChild(buyButton);
+            shopItemsContainer.appendChild(itemDiv);
+        });
+    }
+
+    function buyUpgrade(upgradeId) {
+        const upgrade = SHOP_UPGRADES.find(u => u.id === upgradeId);
+        if (!upgrade) return;
+
+        const currentLevel = gameState.shopItems[upgrade.id] ? gameState.shopItems[upgrade.id].level : 0;
+        if (upgrade.maxLevel && currentLevel >= upgrade.maxLevel) {
+            showTemporaryAlert("এই আইটেমটি ইতিমধ্যে সর্বোচ্চ লেভেলে!", "warning");
+            return;
+        }
+
+        const price = getUpgradePrice(upgrade);
+        if (gameState.coins >= price) {
+            gameState.coins -= price;
+            if (!gameState.shopItems[upgrade.id]) gameState.shopItems[upgrade.id] = { level: 0, purchased: 0 };
+            
+            gameState.shopItems[upgrade.id].level++;
+            gameState.shopItems[upgrade.id].purchased++; // মোট কতবার কেনা হয়েছে
+            
+            if(upgrade.effect) upgrade.effect(gameState.shopItems[upgrade.id].level);
+            
+            playSound('upgrade');
+            updateAllUI();
+            saveGame();
+            checkAllTasksCompletion();
+            showTemporaryAlert(`${upgrade.name} আপগ্রেড সফল!`, 'success');
+        } else {
+            showTemporaryAlert('অপর্যাপ্ত কয়েন!', 'danger');
+        }
+    }
+    refreshShopButton.addEventListener('click', () => {
+        showTemporaryAlert('শপ রিফ্রেশ করা হয়েছে! (বিশেষ অফার শীঘ্রই আসছে...)', 'info');
+        renderShopItems();
+    });
+
+
+    // --- প্রোফাইল জোন লজিক ---
+    saveUsernameButton.addEventListener('click', () => {
+        const newName = usernameInput.value.trim().slice(0, 15); // সর্বোচ্চ ১৫ অক্ষর
+        if (newName) {
+            gameState.username = newName;
+            updateProfileInfo(); saveGame(); usernameInput.value = '';
+            showTemporaryAlert('নাম সফলভাবে পরিবর্তন করা হয়েছে!', 'success');
+        } else { showTemporaryAlert('অনুগ্রহ করে একটি নাম লিখুন।', 'warning');}
+    });
+    themeToggleButton.addEventListener('click', () => {
+        gameState.theme = (gameState.theme === 'dark' ? 'light' : 'dark');
+        applyTheme(gameState.theme); saveGame();
+    });
+    function applyTheme(themeName) { document.body.dataset.theme = themeName; }
+
+    resetProgressButton.addEventListener('click', () => {
+        if (confirm('আপনি কি সত্যিই সব অগ্রগতি রিসেট করতে চান? এই কাজটি ফেরানো যাবে না। এটি আপনার লোকাল লিডারবোর্ডের তথ্যও মুছে ফেলবে।')) {
+            localStorage.removeItem('tapProGameData');
+            localStorage.removeItem('tapGameLeaderboard'); // লিডারবোর্ডও রিসেট
+            // ডিফল্ট স্টেট পুনরায় লোড করুন
+            gameState = getInitialGameState(); // একটি ফাংশন থেকে ডিফল্ট স্টেট পান
+            SHOP_UPGRADES.forEach(upgrade => {
+                 if(upgrade.effect) upgrade.effect(0); // Reset effect to level 0
+            });
+            updateAllUI(); saveGame();
+            showTemporaryAlert('অগ্রগতি রিসেট করা হয়েছে!', 'success');
+            switchScreen('tapZoneScreen');
+        }
+    });
+    function getInitialGameState() { // রিসেট বা প্রথমবার খেলার জন্য
+        return {
+            coins: 0, tapPower: 1, autoTapPower: 0, username: 'অতিথি', highScore: 0,
+            todayTaps: 0, totalTaps: 0, lastPlayedDate: new Date().toISOString().slice(0,10),
+            level: 1, xp: 0, theme: 'dark', soundEnabled: true, shopItems: {}, completedTasks: [], activeDailyTasks: {},
+            tapCombo: 0, maxCombo: 0, criticalTapChance: 0.05, criticalTapMultiplier: 3, baseTapMultiplier: 1,
+            comboTimeoutId: null, lastTapTime: 0, comboThreshold: 10, comboBreakGracePeriod: 2000,
+            timeBonus: { active: false, endsAt: 0, duration: 30000, nextAvailableAt: 0, cooldown: 5 * 60 * 1000, multiplierEffect: 2 },
+            energy: { current: 100, max: 100, rechargeRate: 1, lastRechargeTime: Date.now(), enabled: false },
+            powerMode: { active: false, endsAt: 0, duration: 10000, cooldown: 60 * 1000, nextAvailableAt: 0, effectMultiplier: 3 },
+            loginStreak: 1, lastLoginDate: new Date().toISOString().slice(0,10), gameStats: { totalGameTime: 0, tapSessions: 0, avgTapsPerSecond: 0 },
+            eventData: { dailyLoginClaimedToday: false, wheelSpinsToday: 0, maxWheelSpinsPerDay: 1 },
+            currentLocalLeaderboard: [],
+        };
+    }
+        
+    function addXP(amount) {
+        // gameState.xpMultiplier এখানে ব্যবহার করা যেতে পারে যদি থাকে
+        // const finalXP = amount * (gameState.xpMultiplier || 1);
+        gameState.xp += Math.floor(amount);
+        checkLevelUp();
+    }
+    function checkLevelUp() {
+        const currentLevelXPThreshold = LEVEL_XP_THRESHOLD[gameState.level -1]; // বর্তমান লেভেল শুরু হওয়ার XP (আসলে আগের লেভেলের থ্রেশহোল্ড)
+        const nextLevelXPThreshold = LEVEL_XP_THRESHOLD[gameState.level];
+
+        if (nextLevelXPThreshold && gameState.xp >= nextLevelXPThreshold) {
+            gameState.level++;
+            // gameState.xp -= nextLevelXPThreshold; // XP রিসেট না করে জমা রাখা যায়
+            playSound('levelUp');
+            showTemporaryAlert(`অভিনন্দন! আপনি লেভেল ${gameState.level}-এ পৌঁছেছেন!`, 'success');
+            const bonusCoins = gameState.level * 100 * gameState.level; // লেভেল বাড়ার সাথে সাথে বোনাসও বেশি
+            gameState.coins += bonusCoins;
+            showTemporaryAlert(`লেভেল আপ বোনাস: +${formatNumber(bonusCoins)} কয়েন!`, 'success');
+            
+            // নতুন ফিচার আনলক হতে পারে, যেমন এনার্জি সিস্টেম লেভেল ৫ এ
+            if (gameState.level === 5 && !gameState.energy.enabled) {
+                // gameState.energy.enabled = true; // অথবা একটি শপ আইটেম হিসেবে আনলক হবে
+                // showTemporaryAlert("এনার্জি সিস্টেম আনলকড! দোকান থেকে চালু করুন।", "info");
+            }
+
+            updateProfileInfo(); saveGame();
+            checkLevelUp(); // যদি একাধিক লেভেল আপ হয়
+        }
+        updateProfileInfo(); // XP বার আপডেটের জন্য
+    }
+
+    const BADGES_DEFINITIONS = [
+        { id: 'beginner_tapper', name: 'ট্যাপ শিক্ষানবিশ', emoji: '🔰', condition: () => gameState.totalTaps >= 100 },
+        { id: 'master_tapper', name: 'ট্যাপ মাস্টার', emoji: 'ოს', condition: () => gameState.totalTaps >= 5000 },
+        { id: 'coin_collector', name: 'কয়েন সংগ্রাহক', emoji: '💰', condition: () => gameState.coins >= 50000 },
+        { id: 'level_10', name: 'লেভেল ১০', emoji: '🔟', condition: () => gameState.level >= 10 },
+        { id: 'combo_king', name: 'কম্বো কিং', emoji: '👑', condition: () => gameState.maxCombo >= 50 },
+        { id: 'shopaholic', name: 'শপহোলিক', emoji: '🛍️', condition: () => Object.values(gameState.shopItems).reduce((sum, item) => sum + item.purchased, 0) >= 10 }, // মোট ১০টি কেনাকাটা
+        { id: 'daily_player', name: 'দৈনিক খেলোয়াড়', emoji: '📅', condition: () => gameState.loginStreak >= 7 },
+    ];
+    function renderBadges() {
+        badgesContainerEl.innerHTML = '';
+        const userBadges = BADGES_DEFINITIONS.filter(badge => badge.condition());
+        if (userBadges.length === 0) {
+            badgesContainerEl.innerHTML = '<p style="font-size:12px; color:#aaa; text-align:center; margin:0;">এখনো কোনো ব্যাজ নেই।</p>';
+            return;
+        }
+        userBadges.forEach(badge => {
+            const badgeEl = document.createElement('span');
+            badgeEl.textContent = badge.emoji;
+            badgeEl.title = badge.name;
+            badgeEl.style.fontSize = '24px';
+            badgesContainerEl.appendChild(badgeEl);
+        });
+    }
+
+
+    // --- গেম মিশন জোন লজিক ---
+    const TASKS = [
+        // সাধারণ টাস্ক (একবার)
+        { id: 'tap100', name: '১০০ ট্যাপ করুন', description: 'সাধারণ ট্যাপ জোনে ১০০ বার ট্যাপ করুন।', reward: { coins: 100, xp: 20 }, condition: () => gameState.totalTaps >= 100, type: 'onetime' },
+        { id: 'buyUpgrade1', name: '১টি আপগ্রেড কিনুন', description: 'দোকান থেকে যেকোনো ১টি আপগ্রেড কিনুন।', reward: { coins: 200, xp: 50 }, condition: () => Object.values(gameState.shopItems).some(item => item.level > 0), type: 'onetime' },
+        { id: 'reachLevel5', name: 'লেভেল ৫-এ পৌঁছান', description: 'আপনার প্রোফাইল লেভেল ৫ করুন।', reward: { coins: 500, xp: 100 }, condition: () => gameState.level >= 5, type: 'onetime' },
+        { id: 'combo25', name: '২৫ কম্বো হিট করুন', description: 'টানা ২৫টি কম্বো হিট করুন।', reward: { coins: 300, xp: 75 }, condition: () => gameState.maxCombo >= 25, type: 'onetime' },
+        { id: 'save10kCoins', name: '১০,০০০ কয়েন জমান', description: 'একসাথে ১০,০০০ কয়েন আপনার অ্যাকাউন্টে রাখুন।', reward: { coins: 1000, xp: 150 }, condition: () => gameState.coins >= 10000, type: 'onetime'},
+        
+        // দৈনিক টাস্ক
+        { id: 'tap500daily', name: 'দৈনিক ৫০০ ট্যাপ', description: 'আজকে ৫০০ ট্যাপ সম্পন্ন করুন।', reward: { coins: 250, xp: 60 }, condition: () => gameState.todayTaps >= 500, type: 'daily' },
+        { id: 'complete3tasksDaily', name: 'দৈনিক ৩টি মিশন সম্পন্ন করুন', description: 'আজকে যেকোনো ৩টি মিশন সম্পন্ন করুন।', reward: { coins: 400, xp: 100 }, condition: () => countDailyCompletedTasks() >= 3, type: 'daily'}, // এই ফাংশনটি তৈরি করতে হবে
+
+        // সাপ্তাহিক টাস্ক (সরলীকৃত, দৈনিক এর মতো রিসেট হবে তবে বড় লক্ষ্য)
+        // { id: 'tap10000weekly', name: 'সাপ্তাহিক ১০,০০০ ট্যাপ', description: 'এই সপ্তাহে ১০,০০০ ট্যাপ সম্পন্ন করুন।', reward: { coins: 2000, xp: 500 }, condition: () => gameState.totalTaps % 10000 < 1000, type: 'weekly' }, // সিম্পল কন্ডিশন
+    ];
+    
+    function countDailyCompletedTasks() {
+        let count = 0;
+        TASKS.forEach(task => {
+            if (task.type === 'daily' && gameState.activeDailyTasks[task.id] && gameState.activeDailyTasks[task.id].completedToday) {
+                count++;
+            }
+        });
+        // এককালীন টাস্ক যেগুলো আজ সম্পন্ন হয়েছে সেগুলোও গোনা যেতে পারে
+        gameState.completedTasks.forEach(taskId => {
+            const taskInfo = TASKS.find(t => t.id === taskId);
+            // যদি আজকেই সম্পন্ন হয়ে থাকে (এর জন্য completion date স্টোর করতে হবে)
+            // আপাতত সরল রাখার জন্য এটা বাদ দিচ্ছি
+        });
+        return count;
+    }
+
+
+    function renderTasks() {
+        if (!tasksContainer) return;
+        tasksContainer.innerHTML = '';
+        TASKS.forEach(task => {
+            let isCompleted = false;
+            let canClaim = false;
+
+            if (task.type === 'onetime') {
+                isCompleted = gameState.completedTasks.includes(task.id);
+                if (!isCompleted && task.condition()) canClaim = true;
+            } else if (task.type === 'daily') {
+                if (!gameState.activeDailyTasks[task.id]) { // যদি টাস্কের ডেটা না থাকে
+                    gameState.activeDailyTasks[task.id] = { completedToday: false, lastCompletionDate: '' };
+                }
+                isCompleted = gameState.activeDailyTasks[task.id].completedToday;
+                if (!isCompleted && task.condition()) canClaim = true;
+            }
+            // সাপ্তাহিক/অন্যান্য প্রকারের জন্য একই রকম লজিক
+
+            const taskDiv = document.createElement('div');
+            taskDiv.classList.add('task-item', 'card');
+            if (isCompleted) taskDiv.classList.add('completed');
+
+            let progressTextContent = '';
+            if (!isCompleted && !canClaim) { // যদি সম্পন্ন না হয় এবং দাবিও করা না যায়, অগ্রগতি দেখান
+                if (task.id === 'tap100') progressTextContent = `অগ্রগতি: ${gameState.totalTaps}/100`;
+                else if (task.id === 'tap500daily') progressTextContent = `অগ্রগতি: ${gameState.todayTaps}/500`;
+                else if (task.id === 'combo25') progressTextContent = `অগ্রগতি: ${gameState.maxCombo}/25`;
+                // অন্যান্য টাস্কের জন্য অগ্রগতি...
+            }
+            
+            taskDiv.innerHTML = `
+                <h3>${task.name} ${isCompleted ? '(আজ সম্পন্ন)' : (task.type === 'onetime' && gameState.completedTasks.includes(task.id) ? '(সম্পন্ন)' : '')}</h3>
+                <p>${task.description}</p>
+                <p>🎁 পুরস্কার: ${formatNumber(task.reward.coins)} কয়েন, ${task.reward.xp} XP</p>
+                ${progressTextContent ? `<p style="font-size:0.8em; color:var(--warning-color);">${progressTextContent}</p>` : ''}
+            `;
+            
+            if (canClaim) {
+                const claimButton = document.createElement('button');
+                claimButton.classList.add('button');
+                claimButton.textContent = 'দাবি করুন';
+                claimButton.style.padding = "8px 12px"; claimButton.style.fontSize = "12px";
+                claimButton.onclick = () => completeTask(task.id);
+                taskDiv.appendChild(claimButton);
+            }
+            tasksContainer.appendChild(taskDiv);
+        });
+        renderTaskHistory();
+    }
+
+    function completeTask(taskId) {
+        const task = TASKS.find(t => t.id === taskId);
+        if (!task) return;
+
+        let alreadyClaimed = false;
+        if (task.type === 'onetime') {
+            alreadyClaimed = gameState.completedTasks.includes(taskId);
+        } else if (task.type === 'daily') {
+            alreadyClaimed = gameState.activeDailyTasks[taskId] && gameState.activeDailyTasks[taskId].completedToday;
+        }
+
+        if (alreadyClaimed) {
+            showTemporaryAlert("এই মিশন ইতিমধ্যে সম্পন্ন হয়েছে।", "warning");
+            return;
+        }
+
+        if (task.condition()) {
+            gameState.coins += task.reward.coins;
+            addXP(task.reward.xp);
+            
+            if (task.type === 'onetime') {
+                gameState.completedTasks.push(taskId);
+            } else if (task.type === 'daily') {
+                if(!gameState.activeDailyTasks[task.id]) gameState.activeDailyTasks[task.id] = {};
+                gameState.activeDailyTasks[task.id].completedToday = true;
+                gameState.activeDailyTasks[task.id].lastCompletionDate = new Date().toISOString().slice(0,10);
+            }
+            
+            playSound('taskComplete'); showConfetti();
+            showTemporaryAlert(`"${task.name}" মিশন সম্পন্ন! +${formatNumber(task.reward.coins)}💰, +${task.reward.xp}XP ✨`, 'success', 4000);
+            updateAllUI(); saveGame();
+            checkAllTasksCompletion(); // একটি টাস্ক সম্পন্ন হলে অন্য টাস্কের শর্ত পূরণ হতে পারে (যেমন "৩টি টাস্ক সম্পন্ন করুন")
+        } else {
+            showTemporaryAlert("মিশনের শর্ত এখনো পূরণ হয়নি।", "warning");
+        }
+    }
+    function checkAllTasksCompletion() { // কোনো UI পরিবর্তন না করে শুধু টাস্ক ক্লেইমেবল কিনা তা রি-রেন্ডার করে
+        if (document.getElementById('taskZoneScreen').classList.contains('active')) {
+            renderTasks();
+        }
+    }
+    function renderTaskHistory() {
+        taskHistoryListEl.innerHTML = '';
+        let completedCount = 0;
+        TASKS.forEach(task => { // সব টাস্কের উপর লুপ করুন
+            let taskName = task.name;
+            let completedDate = '';
+
+            if (task.type === 'onetime' && gameState.completedTasks.includes(task.id)) {
+                 // এককালীন টাস্কের জন্য তারিখ সংরক্ষণ করা হয়নি, তাই শুধু নাম
+                 const li = document.createElement('li');
+                 li.textContent = `${taskName} - সম্পন্ন (একবার)`;
+                 taskHistoryListEl.appendChild(li);
+                 completedCount++;
+            } else if (task.type === 'daily' && gameState.activeDailyTasks[task.id] && gameState.activeDailyTasks[task.id].lastCompletionDate) {
+                 // দৈনিক টাস্কের শেষ সমাপ্তির তারিখ
+                 const li = document.createElement('li');
+                 li.textContent = `${taskName} - সর্বশেষ সম্পন্ন: ${new Date(gameState.activeDailyTasks[task.id].lastCompletionDate).toLocaleDateString('bn-BD')}`;
+                 taskHistoryListEl.appendChild(li);
+                 // completedCount++; // দৈনিক টাস্ক ইতিহাসে কতবার দেখানো হবে তা আপনার উপর
+            }
+        });
+
+        if (taskHistoryListEl.children.length === 0) { // যদি কোনো ইতিহাস না থাকে
+             taskHistoryListEl.innerHTML = '<li>কোনো মিশন এখনো সম্পন্ন হয়নি।</li>';
+        }
+    }
+    function showConfetti() { /* ... আগের মতোই ... */ }
+
+
+    // --- বিশ্ব র‍্যাংকিং জোন লজিক ---
+    function getLocalLeaderboard(category = 'score') {
+        let leaderboard = JSON.parse(localStorage.getItem('tapGameLeaderboard')) || [];
+        
+        // বর্তমান ইউজারের এন্ট্রি তৈরি
+        let userScore;
+        switch(category) {
+            case 'level': userScore = gameState.level; break;
+            case 'totalTaps': userScore = gameState.totalTaps; break;
+            default: userScore = gameState.highScore; // score
+        }
+        const userEntry = { name: gameState.username, score: userScore, level: gameState.level, isUser: true };
+
+        let userInLeaderboard = false;
+        leaderboard = leaderboard.map(entry => {
+            if (entry.name === gameState.username) { // একই নামের ইউজারকে আপডেট করুন
+                userInLeaderboard = true;
+                return { ...entry, ...userEntry }; // নতুন স্কোর ও অন্যান্য তথ্য দিয়ে আপডেট
+            }
+            return entry;
+        });
+
+        if (!userInLeaderboard) {
+            leaderboard.push(userEntry);
+        }
+        
+        // ডামি এন্ট্রি (যদি কম থাকে এবং বর্তমান ইউজারের ডেটার উপর ভিত্তি করে)
+        const dummyNames = ["খেলোয়াড় ১", "গেমার প্রো", "ট্যাপ কিং", "কয়েন মাস্টার", "আলফা টেপার", "বেটা টেস্টার", "ক্যাপ্টেন ক্লিক", "লেজেন্ড"];
+        let currentDummyCount = leaderboard.filter(e => !e.isUser).length;
+
+        for (let i = 0; i < dummyNames.length && currentDummyCount < 7; i++) {
+            const name = dummyNames[i % dummyNames.length] + (Math.floor(i/dummyNames.length) > 0 ? ` ${Math.floor(i/dummyNames.length)+1}` : '');
+            if (!leaderboard.some(entry => entry.name === name)) {
+                let dummyScore, dummyLevel, dummyTotalTaps;
+                dummyLevel = Math.max(1, Math.floor(Math.random() * (gameState.level + 5) + (gameState.level / 2) -2));
+                dummyTotalTaps = Math.max(10, Math.floor(Math.random() * (gameState.totalTaps + 1000) + (gameState.totalTaps / 2) - 500));
+                dummyScore = Math.max(100, Math.floor(Math.random() * (gameState.highScore + 20000) + (gameState.highScore / 2) - 10000));
+                
+                let displayScore;
+                switch(category) {
+                    case 'level': displayScore = dummyLevel; break;
+                    case 'totalTaps': displayScore = dummyTotalTaps; break;
+                    default: displayScore = dummyScore;
+                }
+
+                leaderboard.push({ name: name, score: displayScore, level: dummyLevel });
+                currentDummyCount++;
+            }
+        }
+
+        leaderboard.sort((a, b) => b.score - a.score); // স্কোর অনুযায়ী সাজানো
+        leaderboard = leaderboard.slice(0, 10); // সেরা ১০ জন
+
+        // isUser ফ্ল্যাগ স্টোরেজে সেভ না করাই ভালো
+        gameState.currentLocalLeaderboard = leaderboard.map(e => ({...e, isUser: e.name === gameState.username})); // isUser সেট করুন
+        localStorage.setItem('tapGameLeaderboard', JSON.stringify(leaderboard.map(e => ({name: e.name, score: e.score, level: e.level}))));
+        return gameState.currentLocalLeaderboard;
+    }
+
+    function renderRankings() {
+        if (!rankingListContainer || !rankingCategorySelect) return;
+        const category = rankingCategorySelect.value;
+        rankingListContainer.innerHTML = 'লোড হচ্ছে...';
+        
+        setTimeout(() => { // সিমুলেট নেটওয়ার্ক ডিলে বা প্রসেসিং টাইম
+            const leaderboard = getLocalLeaderboard(category);
+            rankingListContainer.innerHTML = ''; // পরিষ্কার করুন
+
+            if (leaderboard.length === 0) {
+                rankingListContainer.innerHTML = '<p>এখনো কোনো র‍্যাংকিং ডেটা নেই।</p>';
+                return;
+            }
+
+            leaderboard.forEach((entry, index) => {
+                const rankItem = document.createElement('div');
+                rankItem.classList.add('rank-item', 'card'); // card class যোগ করা হলো
+                if (entry.isUser) {
+                    rankItem.classList.add('user-rank');
+                }
+                // র‍্যাংক অনুযায়ী আলাদা ব্যাকগ্রাউন্ড (উদাহরণ)
+                if (index === 0 && !entry.isUser) rankItem.style.borderLeftColor = 'gold';
+                else if (index === 1 && !entry.isUser) rankItem.style.borderLeftColor = 'silver';
+                else if (index === 2 && !entry.isUser) rankItem.style.borderLeftColor = '#cd7f32'; /* Bronze */
+
+
+                let scoreLabel = "স্কোর";
+                if (category === 'level') scoreLabel = "লেভেল";
+                else if (category === 'totalTaps') scoreLabel = "মোট ট্যাপ";
+
+                rankItem.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="rank-position" style="font-size: 1.5em; min-width:40px;">${index + 1}.</span>
+                        <span class="rank-name" style="flex-grow:1; margin-left:10px;">${entry.name} ${entry.isUser ? "(আপনি)" : ""} (লেভেল ${entry.level || 1})</span>
+                        <span class="rank-score" style="font-weight:bold; font-size:1.1em;">${formatNumber(entry.score)} ${category === 'score' ? '' : ''}</span>
+                    </div>
+                `;
+                rankingListContainer.appendChild(rankItem);
+            });
+        }, 200); // ২০০ms ডিলে
+    }
+    rankingCategorySelect.addEventListener('change', renderRankings);
+    updateRankButton.addEventListener('click', () => {
+        showTemporaryAlert('র‍্যাংকিং আপডেট করা হচ্ছে...', 'info', 1000);
+        renderRankings();
+    });
+
+    // --- ইভেন্ট জোন লজিক ---
+    const EVENTS = [
+        { 
+            id: 'dailyLogin', name: '🎁 দৈনিক লগইন বোনাস', 
+            description: `প্রতিদিন প্রথমবার লগইন করে ${formatNumber(500 + gameState.loginStreak * 100)} কয়েন এবং ${20 + gameState.loginStreak * 5} XP জিতুন! আপনার বর্তমান স্ট্রিক: ${gameState.loginStreak} দিন।`,
+            actionText: 'দাবি করুন',
+            canClaim: () => !gameState.eventData.dailyLoginClaimedToday,
+            onClaim: () => {
+                const coinReward = 500 + gameState.loginStreak * 100;
+                const xpReward = 20 + gameState.loginStreak * 5;
+                gameState.coins += coinReward;
+                addXP(xpReward);
+                gameState.eventData.dailyLoginClaimedToday = true;
+                showTemporaryAlert(`দৈনিক লগইন বোনাস! +${formatNumber(coinReward)}💰, +${xpReward}XP ✨`, 'success');
+            }
+        },
+        {
+            id: 'timeBonusEvent', name: '⏱️ টাইম বোনাস অ্যাক্টিভেট',
+            description: `এখনই ${gameState.timeBonus.duration/1000} সেকেন্ডের জন্য ট্যাপ মাল্টিপ্লায়ার দ্বিগুণ (${gameState.timeBonus.multiplierEffect}x) করুন!`,
+            actionText: 'অ্যাক্টিভেট',
+            canClaim: () => !gameState.timeBonus.active && Date.now() >= gameState.timeBonus.nextAvailableAt,
+            onClaim: () => { activateTimeBonus(); }
+        },
+        {
+            id: 'wheelOfFortune', name: '🎡 ভাগ্যচক্র',
+            description: `ভাগ্যচক্র ঘুরিয়ে আকর্ষণীয় পুরস্কার জিতুন! দিনে ${gameState.eventData.maxWheelSpinsPerDay} বার। (আজকে ${gameState.eventData.wheelSpinsToday} বার ঘোরানো হয়েছে)`,
+            actionText: 'ঘোরান',
+            canClaim: () => gameState.eventData.wheelSpinsToday < gameState.eventData.maxWheelSpinsPerDay,
+            onClaim: () => {
+                gameState.eventData.wheelSpinsToday++;
+                const prizes = [
+                    {type: 'coins', value: 1000, weight: 40}, {type: 'coins', value: 5000, weight: 20},
+                    {type: 'xp', value: 50, weight: 30}, {type: 'xp', value: 200, weight: 10},
+                    {type: 'nothing', value: 0, weight: 5} // কিচ্ছু না
+                ];
+                const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
+                let randomNum = Math.random() * totalWeight;
+                let chosenPrize;
+                for (const prize of prizes) {
+                    if (randomNum < prize.weight) { chosenPrize = prize; break; }
+                    randomNum -= prize.weight;
+                }
+                if (chosenPrize && chosenPrize.type !== 'nothing') {
+                    if (chosenPrize.type === 'coins') gameState.coins += chosenPrize.value;
+                    if (chosenPrize.type === 'xp') addXP(chosenPrize.value);
+                    showTemporaryAlert(`ভাগ্যচক্র থেকে আপনি ${formatNumber(chosenPrize.value)} ${chosenPrize.type === 'coins' ? 'কয়েন' : 'XP'} জিতেছেন!`, 'success');
+                } else {
+                    showTemporaryAlert('উফফ! এবার কিছু পাননি। আবার চেষ্টা করুন!', 'warning');
+                }
+            }
+        },
+        // আরও ইভেন্ট যোগ করা যেতে পারে
+    ];
+
+    function renderEvents() {
+        if (!eventItemsContainer) return;
+        eventItemsContainer.innerHTML = '';
+        EVENTS.forEach(event => {
+            const eventDiv = document.createElement('div');
+            eventDiv.classList.add('event-item', 'card');
+            
+            // Description আপডেট করা যদি তা gameState এর উপর নির্ভরশীল হয়
+            let description = event.description;
+            if(event.id === 'dailyLogin') description = `প্রতিদিন প্রথমবার লগইন করে ${formatNumber(500 + gameState.loginStreak * 100)} কয়েন এবং ${20 + gameState.loginStreak * 5} XP জিতুন! আপনার বর্তমান স্ট্রিক: ${gameState.loginStreak} দিন।`;
+            if(event.id === 'wheelOfFortune') description = `ভাগ্যচক্র ঘুরিয়ে আকর্ষণীয় পুরস্কার জিতুন! দিনে ${gameState.eventData.maxWheelSpinsPerDay} বার। (আজকে ${gameState.eventData.wheelSpinsToday}/${gameState.eventData.maxWheelSpinsPerDay} বার ঘোরানো হয়েছে)`;
+
+
+            eventDiv.innerHTML = `
+                <h3>${event.name}</h3>
+                <p>${description}</p>
+            `;
+            
+            const canClaim = event.canClaim();
+            if (canClaim || !event.canClaim()) { // সবসময় বাটন দেখাবে, কিন্তু disable হতে পারে
+                const claimButton = document.createElement('button');
+                claimButton.classList.add('button');
+                claimButton.textContent = event.actionText;
+                claimButton.disabled = !canClaim;
+                
+                let cooldownText = "";
+                if (event.id === 'timeBonusEvent' && !canClaim && Date.now() < gameState.timeBonus.nextAvailableAt) {
+                    cooldownText = ` (${Math.ceil((gameState.timeBonus.nextAvailableAt - Date.now())/1000)}s বাকি)`;
+                    claimButton.textContent += cooldownText;
+                }
+
+                claimButton.onclick = () => {
+                    if (event.canClaim()) {
+                        event.onClaim();
+                        updateAllUI(); // UI রিফ্রেশ
+                        saveGame();
+                    }
+                };
+                eventDiv.appendChild(claimButton);
+            }
+            eventItemsContainer.appendChild(eventDiv);
+        });
+    }
+
+
+    // --- অ্যালার্ট ফাংশন ---
+    function showTemporaryAlert(message, type = 'info', duration = 3000) {
+        alertPopup.textContent = message;
+        alertPopup.className = 'alert-popup'; // Reset classes
+        
+        if (type === 'success') alertPopup.style.backgroundColor = 'var(--success-color)';
+        else if (type === 'warning') alertPopup.style.backgroundColor = 'var(--warning-color)';
+        else if (type === 'danger') alertPopup.style.backgroundColor = 'var(--danger-color)';
+        else alertPopup.style.backgroundColor = 'var(--accent-color)';
+        alertPopup.style.color = (type === 'warning' ? 'var(--primary-color)' : '#fff'); // ওয়ার্নিং এর জন্য ডার্ক টেক্সট
+
+        alertPopup.classList.add('show');
+        setTimeout(() => {
+            alertPopup.classList.remove('show');
+        }, duration);
+    }
+
+    // --- গেম শুরু ---
+    function initGame() {
+        console.log("গেম শুরু হচ্ছে...");
+        loadSounds();
+        gameState = getInitialGameState(); // নিশ্চিত করুন যে প্রাথমিক স্টেট লোড হয়েছে
+        loadGame(); // সেভ করা ডেটা দিয়ে ওভাররাইড (যদি থাকে)
+        
+        // প্রথমবার গেম ওপেন হলে কিছু টিপস বা ওয়েলকাম মেসেজ দেখানো যেতে পারে
+        if(gameState.totalTaps === 0 && gameState.coins === 0) {
+            showTemporaryAlert("ট্যাপ টু আর্ন প্রো-তে স্বাগতম! ট্যাপ করে কয়েন জমান ও আপগ্রেড কিনুন।", "info", 5000);
+        }
+        
+        switchScreen('tapZoneScreen'); // ডিফল্ট স্ক্রিন
+        updateAllUI(); // সমস্ত UI উপাদান আপডেট করুন
+        checkAllTasksCompletion();
+        renderEvents(); // ইভেন্ট রেন্ডার
+        console.log("গেম প্রস্তুত!");
+    }
+
+    document.addEventListener('DOMContentLoaded', initGame);
+
+    </script>
+</body>
+</html>
